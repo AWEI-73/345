@@ -13,6 +13,7 @@ import feedparser
 from datetime import datetime
 import re
 import random
+import os
 
 # 設置日誌
 logging.basicConfig(
@@ -22,9 +23,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Vertex AI 設定
-PROJECT_ID = "ageless-courier-460814-p0"
-LOCATION = "us-central1"
-MODEL_ID = "gemini-2.5-flash-preview-05-20"
+PROJECT_ID = os.getenv("PROJECT_ID", "ageless-courier-460814-p0")
+LOCATION = os.getenv("LOCATION", "us-central1")
+MODEL_ID = os.getenv("MODEL_ID", "gemini-2.5-flash-preview-05-20")
 
 class PTTScraper:
     def __init__(self, max_retries: int = 3, retry_delay: int = 5):
