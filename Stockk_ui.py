@@ -22,7 +22,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Gemini API Key 設定
-GEMINI_API_KEY = os.getenv("AIzaSyDjEKyj-tzP3W_ZtwAUkrO1EHMw82-EmBA")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if not GEMINI_API_KEY:
     st.error("找不到 GEMINI_API_KEY，請在 Secrets 設定您的 Gemini API 金鑰！")
     st.stop()
@@ -160,6 +160,7 @@ class StockAnalyzer:
     def __init__(self):
         self.tw_stocks = fetch_twse_stock_list()
         self.ptt_scraper = PTTScraper()
+        self.model = genai.GenerativeModel("gemini-2.5-flash-preview-05-20")
         logger.info(f"已載入 {len(self.tw_stocks)} 家上市公司資料")
 
     def search_stocks(self, query: str) -> List[Tuple[str, str]]:
@@ -194,7 +195,7 @@ class StockAnalyzer:
     def ask_gemini_for_term(self, term: str) -> Dict:
         prompt = f"""角色：你是一位精通金融的AI助理。\n任務：請用繁體中文向一位金融新手解釋「{term}」是什麼。\n請盡量使用生活化的比喻，並說明其重要性。避免提供任何投資建議。\n\n請嚴格按照以下格式輸出（不要添加任何其他內容）：\n名詞解釋：[此處填寫名詞解釋]\n重要性：[此處填寫重要性說明]\n生活比喻：[此處填寫生活化比喻]"""
         try:
-            response = genai.generate_text(prompt=prompt)
+            response = self.model.generate_content(prompt)
             lines = response.text.split('\n')
             analysis_result = {}
             for line in lines:
@@ -213,7 +214,7 @@ class StockAnalyzer:
     def analyze_news_with_gemini(self, title: str, summary: str) -> Dict:
         prompt = f"""角色：你是一位資深財經記者，也是一位擅長向新手解釋股市的導師。\n任務：請閱讀以下財經新聞標題與摘要，並完成下列任務：\n1. 判斷此新聞對相關股票的潛在影響是偏「利多」、「利空」，還是「中性」。\n2. 針對這則新聞，撰寫一段約50-100字的「新手看法解釋」，說明這則新聞為什麼被認為是利多/利空/中性，以及它通常可能對股價產生什麼樣的初步影響。請避免使用過於專業的術語，並強調這不是投資建議。\n\n新聞標題：{title}\n新聞摘要：{summary}\n\n請嚴格按照以下格式輸出（不要添加任何其他內容）：\n情感判斷：[利多/利空/中性]\n新手看法：[此處填寫新手看法解釋]"""
         try:
-            response = genai.generate_text(prompt=prompt)
+            response = self.model.generate_content(prompt)
             lines = response.text.split('\n')
             analysis_result = {}
             for line in lines:
@@ -239,7 +240,7 @@ class StockAnalyzer:
         摘要：
         """
         try:
-            response = genai.generate_text(prompt=prompt)
+            response = self.model.generate_content(prompt)
             return response.text
         except Exception as e:
             logger.error(f"Gemini 摘要時發生錯誤: {e}")
